@@ -7,6 +7,7 @@ import { IoMdRestaurant } from 'react-icons/io'
 import { MdUpdate, MdGroup } from 'react-icons/md'
 import ConfirmationModal from '../components/ConfirmationModal'
 import '../app/globals.css'
+import CustomerDetails from './customer-details'
 
 export default function Dashboard() {
   const [emptySeats, setEmptySeats] = useState(0)
@@ -14,7 +15,9 @@ export default function Dashboard() {
   const [waitingList, setWaitingList] = useState([])
   const [customSize, setCustomSize] = useState(2)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
+  // Load initial data
   useEffect(() => {
     const storedSeats = localStorage.getItem('emptySeats')
     const storedCustomers = JSON.parse(localStorage.getItem('customers')) || []
@@ -23,9 +26,13 @@ export default function Dashboard() {
     if (storedSeats) setEmptySeats(parseInt(storedSeats))
     setCustomers(storedCustomers)
     setWaitingList(storedWaiting)
+    setIsInitialized(true)
   }, [])
 
+  // Handle seat assignments when empty seats or waiting list changes
   useEffect(() => {
+    if (!isInitialized) return
+    
     if (emptySeats > 0 && waitingList.length > 0) {
       const sortedWaitingList = [...waitingList].sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt))
       
@@ -35,72 +42,94 @@ export default function Dashboard() {
       
       for (let i = 0; i < sortedWaitingList.length; i++) {
         if (sortedWaitingList[i].size <= seatsAvailable) {
-          assignedCustomers.push(sortedWaitingList[i])
+          assignedCustomers.push({
+            ...sortedWaitingList[i],
+            addedAt: new Date().toISOString(), // Update the addedAt time when seated
+            callStatus: 'Pending'
+          })
           seatsAvailable -= sortedWaitingList[i].size
           newWaitingList = newWaitingList.filter(c => c.id !== sortedWaitingList[i].id)
         }
       }
       
       if (assignedCustomers.length > 0) {
+        // Update all state and storage in one go
         const updatedCustomers = [...customers, ...assignedCustomers]
+        
         setCustomers(updatedCustomers)
-        localStorage.setItem('customers', JSON.stringify(updatedCustomers))
         setWaitingList(newWaitingList)
-        localStorage.setItem('waitingList', JSON.stringify(newWaitingList))
         setEmptySeats(seatsAvailable)
+        
+        // Save to localStorage
+        localStorage.setItem('customers', JSON.stringify(updatedCustomers))
+        localStorage.setItem('waitingList', JSON.stringify(newWaitingList))
         localStorage.setItem('emptySeats', seatsAvailable.toString())
 
-        const initiateCalls = async () => {
-          for (const customer of assignedCustomers) {
-            try {
-              const response = await fetch('/api/initiateCall', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ phoneNumber: customer.phone }), // Pass the phone number
-              })
-
-              if (!response.ok) {
-                throw new Error('Failed to initiate call')
-              }
-
-              const data = await response.json()
-              console.log('Call initiated for:', customer.name, data)
-
-              // Update call status to initiated
-              const updatedCustomers = customers.map(c => 
-                c.id === customer.id ? { ...c, callStatus: 'Passed' } : c
-              );
-              setCustomers(updatedCustomers);
-              localStorage.setItem('customers', JSON.stringify(updatedCustomers));
-              
-            } catch (error) {
-              console.error("Error making call for customer:", customer.name, error)
-
-              // Update call status to not initiated
-              const updatedCustomers = customers.map(c => 
-                c.id === customer.id ? { ...c, callStatus: 'Failed' } : c
-              );
-              setCustomers(updatedCustomers);
-              localStorage.setItem('customers', JSON.stringify(updatedCustomers));
-            }
-          }
-        }
-
-        initiateCalls()
+        // Initiate calls for assigned customers
+        initiateCalls(assignedCustomers)
       }
     }
-  }, [emptySeats, waitingList])
+  }, [emptySeats, waitingList, isInitialized])
+
+  const initiateCalls = async (customersToCall) => {
+    for (const customer of customersToCall) {
+      try {
+        const response = await fetch('/api/initiateCall', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phoneNumber: customer.phone }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to initiate call: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        console.log('Call initiated for:', customer.name, data)
+
+        // Update call status
+        setCustomers(prevCustomers => 
+          prevCustomers.map(c => 
+            c.id === customer.id ? { ...c, callStatus: 'Successful' } : c
+          )
+        )
+      } catch (error) {
+        console.error("Error making call for customer:", customer.name, error)
+        
+        // Update call status
+        setCustomers(prevCustomers => 
+          prevCustomers.map(c => 
+            c.id === customer.id ? { ...c, callStatus: 'Failed' } : c
+          )
+        )
+      }
+    }
+    
+    // Update localStorage after all calls are processed
+    setCustomers(prevCustomers => {
+      localStorage.setItem('customers', JSON.stringify(prevCustomers))
+      return prevCustomers
+    })
+  }
 
   const handleAddCustomer = async (customer) => {
-    const newCustomer = { ...customer, id: Date.now(), addedAt: new Date(), callStatus: 'not initiated' } // Initialize callStatus
+    const newCustomer = { 
+      ...customer, 
+      id: Date.now(), 
+      addedAt: new Date().toISOString(), 
+      callStatus: 'Pending',
+      phone: `+91${customer.phone}`
+    }
     
     if (customer.size <= emptySeats) {
       const updatedCustomers = [...customers, newCustomer]
+      
       setCustomers(updatedCustomers)
-      localStorage.setItem('customers', JSON.stringify(updatedCustomers))
       setEmptySeats(emptySeats - customer.size)
+      
+      localStorage.setItem('customers', JSON.stringify(updatedCustomers))
       localStorage.setItem('emptySeats', (emptySeats - customer.size).toString())
 
       try {
@@ -109,52 +138,65 @@ export default function Dashboard() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ phoneNumber: newCustomer.phone }), // Pass the phone number
+          body: JSON.stringify({ phoneNumber: newCustomer.phone }),
         })
 
-        if (!response.ok) {
-          throw new Error('Failed to initiate call')
-        }
+        if (!response.ok) throw new Error('Failed to initiate call')
 
         const data = await response.json()
         console.log('Call initiated:', data)
 
-        // Update call status to initiated
-        const updatedCustomers = [...customers, { ...newCustomer, callStatus: 'initiated' }];
-        setCustomers(updatedCustomers);
-        localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+        setCustomers(prev => 
+          prev.map(c => 
+            c.id === newCustomer.id ? { ...c, callStatus: 'Successful' } : c
+          )
+        )
       } catch (error) {
         console.error("Error making call:", error)
-
-        // Update call status to not initiated
-        const updatedCustomers = [...customers, { ...newCustomer, callStatus: 'not initiated' }];
-        setCustomers(updatedCustomers);
-        localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+        setCustomers(prev => 
+          prev.map(c => 
+            c.id === newCustomer.id ? { ...c, callStatus: 'Failed' } : c
+          )
+        )
+      } finally {
+        // Ensure localStorage is updated
+        setCustomers(prev => {
+          localStorage.setItem('customers', JSON.stringify(prev))
+          return prev
+        })
       }
     } else {
       const updatedWaitingList = [...waitingList, newCustomer]
       setWaitingList(updatedWaitingList)
       localStorage.setItem('waitingList', JSON.stringify(updatedWaitingList))
+    
     }
   }
 
-  const handleCustomerLeave = (id) => {
-    const leavingCustomer = customers.find(c => c.id === id)
-    if (leavingCustomer) {
-      const updatedCustomers = customers.filter(c => c.id !== id)
-      setCustomers(updatedCustomers)
-      localStorage.setItem('customers', JSON.stringify(updatedCustomers))
-      const newEmptySeats = emptySeats + leavingCustomer.size
-      setEmptySeats(newEmptySeats)
-      localStorage.setItem('emptySeats', newEmptySeats.toString())
-    }
-  }
+  // const handleCustomerLeave = (id) => {
+  //   const leavingCustomer = customers.find(c => c.id === id);
+  //   if (leavingCustomer) {
+  //     // Update the status of the customer instead of removing them
+  //     const updatedCustomers = customers.map(c => 
+  //       c.id === id ? { ...c, status: 'left' } : c
+  //     );
+  //     setCustomers(updatedCustomers);
+  //     localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+
+  //     const newEmptySeats = emptySeats + leavingCustomer.size;
+  //     setEmptySeats(newEmptySeats);
+  //     localStorage.setItem('emptySeats', newEmptySeats.toString());
+  //   }
+  // };
 
   const handleUpdateSeats = (newSeats) => {
-    const updatedSeats = emptySeats + newSeats
-    setEmptySeats(updatedSeats)
-    localStorage.setItem('emptySeats', updatedSeats.toString())
-  }
+    setEmptySeats((prevSeats) => {
+      const updatedSeats = prevSeats + newSeats;
+      localStorage.setItem('emptySeats', updatedSeats.toString());
+      return updatedSeats;
+    });
+  };
+  
 
   const handleClearEmptySeats = () => {
     setEmptySeats(0)
@@ -165,7 +207,7 @@ export default function Dashboard() {
 
   const recentCustomers = [...customers]
     .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
-    .slice(0, 10)
+    .slice(0, 10); // This should include all customers regardless of their status
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -223,6 +265,8 @@ export default function Dashboard() {
                     name="phone"
                     className="input input-bordered w-full bg-gray-700 border-gray-600" 
                     required
+                    minLength={10}
+                    maxLength={10}
                   />
                 </div>
                 <div>
@@ -395,22 +439,24 @@ export default function Dashboard() {
                 <table className="table w-full">
                   <thead>
                     <tr className="bg-gray-700">
-                      <th>Name</th>
-                      <th>Group</th>
-                      <th>Seated At</th>
-                      <th>Phone</th>
-                      <th>Call Status</th>
+                      <th className="text-center">Name</th>
+                      <th className="text-center">Group</th>
+                      <th className="text-center">Seated At</th>
+                      <th className="text-center">Phone</th>
+                      <th className="text-center">Call Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentCustomers.map(customer => (
                       <tr key={customer.id} className="hover:bg-gray-700">
-                        <td>{customer.name}</td>
-                        <td>{customer.size}</td>
-                        <td>{new Date(customer.addedAt).toLocaleTimeString()}</td>
-                        <td>{customer.phone}</td>
-                        <td className={`p-2 text-center ${customer.callStatus === 'initiated' ? 'bg-green-500' : 'bg-red-500'} text-white`}>
-                          {customer.callStatus || 'Failed'}
+                        <td className="text-center">{customer.name}</td>
+                        <td className="text-center">{customer.size}</td>
+                        <td className="text-center" >{new Date(customer.addedAt).toLocaleTimeString()}</td>
+                        <td className="text-center">{customer.phone}</td>
+                        <td className="text-center">
+                          <span className={`p-2 rounded-lg  ${customer.callStatus === 'Successful' ? 'bg-green-500' : 'bg-red-500'} text-white`}>
+                            {customer.callStatus || 'Failed'}
+                          </span>
                         </td>
                       </tr>
                     ))}

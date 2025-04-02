@@ -4,7 +4,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { FaUsers, FaChair, FaClock, FaPhone, FaIdBadge } from 'react-icons/fa'
 import { IoMdRestaurant } from 'react-icons/io'
-import '../app/globals.css'
+import '../app/globals.css';
 
 export default function CustomerDetails() {
   const [customers, setCustomers] = useState([])
@@ -114,26 +114,39 @@ export default function CustomerDetails() {
             <div className="overflow-x-auto">
               <table className="table w-full">
                 <thead className="bg-gray-700 text-gray-200 w-full">
-                  <tr>
-                    <th className="flex items-center">
-                      <FaIdBadge className="mr-2" /> ID
-                    </th>
-                    <th>Name</th>
-                    <th>
-                      <FaPhone className="mr-2" /> Phone
-                    </th>
-                    <th>
-                      <FaUsers className="mr-2" /> Group
-                    </th>
-                    <th>
-                      <FaClock className="mr-2" /> Seated At
-                    </th>
-                    <th>Status</th>
+                    <tr className='text-center max-w-full'>
+                      <th>
+                        <span className='flex items-center ml-2'>S.NO</span>
+                      </th>
+                      <th>
+                        <span className='flex items-center ml-2'><FaIdBadge className="mr-2" /> ID</span>
+                      </th>
+
+                      <th className='text-center'>
+                        <span className='flex items-center text-center ml-2'>Name</span>
+                      </th>
+
+                      <th>
+                        <span className='flex items-center ml-2'><FaPhone className="mr-2" /> Phone</span>
+                      </th>
+
+                      <th>
+                        <span className='flex items-center ml-2'><FaUsers className="mr-2" /> Group</span>
+                      </th>
+
+                      <th>
+                        <span className='flex items-center ml-2'><FaClock className="mr-2" /> Seated At</span>
+                      </th>
+
+                      <th>
+                        <span className='flex items-center ml-2'>Call Status</span>
+                      </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCustomers.map((customer) => (
+                  {filteredCustomers.slice().reverse().map((customer, index) => (
                     <tr key={customer.id} className="hover:bg-gray-700">
+                      <td className='pl-10'>{index + 1}</td>
                       <td>{customer.id}</td>
                       <td className="font-medium">{customer.name}</td>
                       <td>{customer.phone}</td>
@@ -145,7 +158,11 @@ export default function CustomerDetails() {
                       <td>
                         {new Date(customer.addedAt || Date.now()).toLocaleString()}
                       </td>
-                      <td>{customer.status === 'left' ? 'Left' : 'Active'}</td>
+                      <td className='pl-8'>
+                        <span className={`p-2 rounded-lg  ${customer.callStatus === 'Successful' ? 'bg-green-500' : 'bg-red-500'} text-white`}>
+                          {customer.callStatus || 'Failed'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
