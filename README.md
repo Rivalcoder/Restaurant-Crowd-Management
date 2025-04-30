@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🍽️ Restaurant Crowd Management System
 
-## Getting Started
+A modern web application for managing restaurant seating, customer queues, and real-time crowd control.
 
-First, run the development server:
+## 🌟 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Feature | Description | Icon |
+|---------|-------------|------|
+| 📊 Dashboard | Real-time overview of restaurant status | 📈 |
+| 👥 Customer Management | Add and track customer information | 👤 |
+| ⏳ Waiting List | Manage customer queues efficiently | ⌛ |
+| 💺 Seat Management | Track available and occupied seats | 🪑 |
+| 📱 Responsive Design | Works on all devices | 📲 |
+| 🤖 AI Calling System | Automated customer notifications using VAPI | 📞 |
+
+## 🛠️ Tech Stack
+
+- **Frontend Framework**: Next.js
+- **Styling**: Tailwind CSS + DaisyUI
+- **Icons**: React Icons
+- **State Management**: React Hooks + LocalStorage
+- **Font**: Geist (Sans + Mono)
+- **Calling System**: VAPI for automated customer notifications
+
+## 📦 Project Structure
+
+```
+src/
+├── app/                 # Next.js app directory
+├── components/          # Reusable UI components
+├── hooks/              # Custom React hooks
+└── pages/              # Application pages
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+1. Clone the repository
+```bash
+git clone https://github.com/Rivalcoder/Restaurant-Crowd-Management
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies
+```bash
+npm install
+```
 
-## Learn More
+3. Run the development server
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 💡 Key Components
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Dashboard
+- Real-time seat availability tracking
+- Customer management interface
+- Waiting list management
+- Quick actions panel
 
-## Deploy on Vercel
+### Customer Management
+- Add new customers
+- Track customer groups
+- Manage seating arrangements
+- Customer history
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Waiting List
+- Queue management
+- Priority seating
+- Wait time tracking
+- Customer notifications
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤖 AI Features
+
+### Automated Calling System
+- **VAPI Integration**: Simple integration with VAPI for automated customer calls
+- **Smart Notifications**: Automated calls to customers when their table is ready
+- **Queue Management**: Intelligent queue management with automated updates
+- **Call Status Tracking**: Track call status and customer responses
+
+### Benefits
+- Reduced manual workload for staff
+- Improved customer experience
+- Efficient queue management
+- Automated follow-ups
+
+## 🔧 Configuration
+
+The application uses local storage for data persistence. Key storage items:
+- `emptySeats`: Available seating capacity
+- `customers`: Currently seated customers
+- `waitingList`: Customers in queue
+
+## 🎨 UI Components
+
+| Component | Purpose |
+|-----------|---------|
+| `CurrentStatus` | Displays real-time restaurant status |
+| `CustomerForm` | Add new customer information |
+| `CustomerList` | Display and manage seated customers |
+| `ConfirmationModal` | Confirm critical actions |
+
+## 📱 Responsive Design
+
+The application is fully responsive and works on:
+- Desktop computers
+- Tablets
+- Mobile phones
+
+## 🔐 Security
+
+- Client-side data validation
+- Secure form handling
+- Protected routes
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+
+
+
