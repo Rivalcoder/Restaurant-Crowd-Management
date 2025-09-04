@@ -11,7 +11,7 @@ A modern web application for managing restaurant seating, customer queues, and r
 | ⏳ Waiting List | Manage customer queues efficiently | ⌛ |
 | 💺 Seat Management | Track available and occupied seats | 🪑 |
 | 📱 Responsive Design | Works on all devices | 📲 |
-| 🤖 AI Calling System | Automated customer notifications using VAPI | 📞 |
+| 🤖 AI Calling System | Automated customer notifications using VAPI or Omnidimension | 📞 |
 
 ## 🛠️ Tech Stack
 
